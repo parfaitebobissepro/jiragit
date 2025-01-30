@@ -64,3 +64,74 @@ def select_branch():
                 print("Choix invalide. Veuillez entrer un numéro valide.")
         except ValueError:
             print("Entrée invalide. Veuillez entrer un numéro.")
+
+def getCurrentTaskNumber():
+    """Get the current Jira task number from the branch name."""
+    branch_name = run_command("git rev-parse --abbrev-ref HEAD")
+    base_name_branch = branch_name.split("_")[0]
+    task_number = base_name_branch.split("/")[1]
+    return task_number
+
+def select_files_for_commit():
+    """Allow user to select files to commit, with options to add all files, finish selection, or go back."""
+    while True:
+        files = run_command("git status --short").split("\n")
+        files = [file.strip().split()[-1] for file in files if file.strip()]
+
+        if not files:
+            print("Aucun fichier modifié trouvé.")
+            return
+
+        selected_files = []
+
+        print("\n--- Fichiers modifiés ---")
+        print("0. Revenir en arrière")
+        for i, file in enumerate(files, start=1):
+            print(f"{i}. {file}")
+        print(". Ajouter tous les fichiers")
+        print("f. Terminer la sélection et continuer")
+
+        while True:
+            choice = input("Entrez le numéro du fichier à ajouter ('.' pour tous, 'f' pour finir) : ").strip()
+
+            if choice == "0":
+                print("Opération annulée, retour au menu principal.")
+                return
+
+            if choice == ".":
+                selected_files = files[:]  # Ajouter tous les fichiers
+                break
+
+            if choice == "f":
+                if not selected_files:
+                    print("Vous devez sélectionner au moins un fichier avant de terminer.")
+                    continue
+                break
+
+            try:
+                choice = int(choice)
+                if 1 <= choice <= len(files):
+                    file = files[choice - 1]
+                    if file not in selected_files:
+                        selected_files.append(file)
+                        print(f"Le fichier {file} a été ajouté à la sélection.")
+                    else:
+                        print(f"Le fichier {file} est déjà sélectionné.")
+                else:
+                    print("Choix invalide. Veuillez entrer un numéro valide.")
+            except ValueError:
+                print("Entrée invalide. Veuillez entrer un numéro.")
+
+        # Affichage des fichiers sélectionnés
+        print("\n--- Fichiers sélectionnés ---")
+        for file in selected_files:
+            print(f"- {file}")
+
+        confirm = input("Confirmez-vous l'ajout de ces fichiers au commit ? (y/n) : ").strip().lower()
+        if confirm == "y":
+            for file in selected_files:
+                run_command(f"git add {file}")
+            print("Fichiers ajoutés avec succès.")
+            return
+        else:
+            print("Sélection annulée, veuillez recommencer.")

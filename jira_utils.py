@@ -51,3 +51,47 @@ def load_config(config_path="../../Tools/devtools/jiragit/config.json"): #path b
         return None
     with open(config_path, "r") as config_file:
         return json.load(config_file)
+
+def jira_add_comment(config, task_number, comment):
+    """Add a comment to a Jira task."""
+    jira_url = config["jira_url"]
+    auth = (config["jira_username"], config["jira_api_token"])
+    url = f"{jira_url}/rest/api/3/issue/{task_number}/comment"
+    payload = {"body": comment}
+    payload = {
+        "body": {
+            "content": [
+            {
+                "content": [
+                {
+                    "text": comment,
+                    "type": "text"
+                }
+                ],
+                "type": "paragraph"
+            }
+            ],
+            "type": "doc",
+            "version": 1
+        }
+    }
+    headers = {"Content-Type": "application/json"}
+
+    response = requests.post(url, json=payload, auth=auth, headers=headers)
+    if response.status_code == 201:
+        print(f"Commentaire ajouté à la tâche Jira {task_number}.")
+    else:
+        print(f"Erreur lors de l'ajout du commentaire à la tâche Jira {task_number} : {response.status_code} {response.text}")
+
+def jira_task_is_in_status(config, task_number, status):
+    """Check if a Jira task is in a specific status."""
+    jira_url = config["jira_url"]
+    auth = (config["jira_username"], config["jira_api_token"])
+    url = f"{jira_url}/rest/api/3/issue/{task_number}"
+    response = requests.get(url, auth=auth)
+    if response.status_code == 200:
+        task_data = response.json()
+        current_status = task_data["fields"]["status"]["name"]
+        return current_status.lower() == status.lower()
+    print(f"La tâche Jira {task_number} est introuvable. Veuillez réessayer.")
+    return False
