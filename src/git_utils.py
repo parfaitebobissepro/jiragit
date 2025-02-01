@@ -7,7 +7,7 @@ def run_command(command):
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Erreur lors de l'exécution de la commande : {command}\n{e.stderr}")
+        print(f"❌ Erreur lors de l'exécution de la commande : {command}\n{e.stderr}")
         return None
 
 def generate_branch_name(task_code, title):
@@ -72,11 +72,77 @@ def getCurrentTaskNumber():
     task_number = base_name_branch.split("/")[1]
     return task_number
 
+# def select_files_for_commit():
+#     """Allow user to select files to commit, with options to add all files, finish selection, or go back."""
+#     while True:
+#         files = run_command("git status --short").split("\n")
+#         files = [file.strip().split()[-1] for file in files if file.strip()]
+
+#         if not files:
+#             print("Aucun fichier modifié trouvé.")
+#             return
+
+#         selected_files = []
+
+#         print("\n--- Fichiers modifiés ---")
+#         print("0. Revenir en arrière")
+#         for i, file in enumerate(files, start=1):
+#             print(f"{i}. {file}")
+#         print(". Ajouter tous les fichiers")
+#         print("f. Terminer la sélection et continuer")
+
+#         while True:
+#             choice = input("Entrez le numéro du fichier à ajouter ('.' pour tous, 'f' pour finir) : ").strip()
+
+#             if choice == "0":
+#                 print("Opération annulée, retour au menu principal.")
+#                 return
+
+#             if choice == ".":
+#                 selected_files = files[:]  # Ajouter tous les fichiers
+#                 break
+
+#             if choice == "f":
+#                 if not selected_files:
+#                     print("Vous devez sélectionner au moins un fichier avant de terminer.")
+#                     continue
+#                 break
+
+#             try:
+#                 choice = int(choice)
+#                 if 1 <= choice <= len(files):
+#                     file = files[choice - 1]
+#                     if file not in selected_files:
+#                         selected_files.append(file)
+#                         print(f"Le fichier {file} a été ajouté à la sélection.")
+#                     else:
+#                         print(f"Le fichier {file} est déjà sélectionné.")
+#                 else:
+#                     print("Choix invalide. Veuillez entrer un numéro valide.")
+#             except ValueError:
+#                 print("Entrée invalide. Veuillez entrer un numéro.")
+
+#         # Affichage des fichiers sélectionnés
+#         print("\n--- Fichiers sélectionnés ---")
+#         for file in selected_files:
+#             print(f"- {file}")
+
+#         confirm = input("Confirmez-vous l'ajout de ces fichiers au commit ? (y/n) : ").strip().lower()
+#         if confirm == "y":
+#             for file in selected_files:
+#                 run_command(f"git add {file}")
+#             print("Fichiers ajoutés avec succès.")
+#             return
+#         else:
+#             print("Sélection annulée, veuillez recommencer.")
+
 def select_files_for_commit():
-    """Allow user to select files to commit, with options to add all files, finish selection, or go back."""
+    """Allow user to select files to commit, excluding deleted files, with options to add all files, finish selection, or go back."""
     while True:
-        files = run_command("git status --short").split("\n")
-        files = [file.strip().split()[-1] for file in files if file.strip()]
+        files_raw = run_command("git status --short").split("\n")
+        
+        # Exclure les fichiers supprimés (ceux qui commencent par "D")
+        files = [file.strip().split()[-1] for file in files_raw if file.strip() and not file.strip().startswith("D")]
 
         if not files:
             print("Aucun fichier modifié trouvé.")
@@ -84,7 +150,7 @@ def select_files_for_commit():
 
         selected_files = []
 
-        print("\n--- Fichiers modifiés ---")
+        print("\n--- Fichiers modifiés (hors fichiers supprimés) ---")
         print("0. Revenir en arrière")
         for i, file in enumerate(files, start=1):
             print(f"{i}. {file}")
@@ -99,7 +165,7 @@ def select_files_for_commit():
                 return
 
             if choice == ".":
-                selected_files = files[:]  # Ajouter tous les fichiers
+                selected_files = files[:]  # Ajouter tous les fichiers sauf supprimés
                 break
 
             if choice == "f":
@@ -129,9 +195,10 @@ def select_files_for_commit():
 
         confirm = input("Confirmez-vous l'ajout de ces fichiers au commit ? (y/n) : ").strip().lower()
         if confirm == "y":
+            # Correction ici : Ajout de chaque fichier individuellement
             for file in selected_files:
                 run_command(f"git add {file}")
-            print("Fichiers ajoutés avec succès.")
-            return
+            print("✅ Fichiers ajoutés avec succès.")
+            return selected_files
         else:
             print("Sélection annulée, veuillez recommencer.")

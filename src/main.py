@@ -1,5 +1,6 @@
 from jira_utils import jira_task_exists, jira_transition, get_valid_task_number, load_config, jira_add_comment, jira_task_is_in_status
 from git_utils import run_command, generate_branch_name, stash_changes, list_remote_branches, select_branch, getCurrentTaskNumber, select_files_for_commit
+from gitlab_utils import create_merge_request
 
 
 def start_new_task(config):
@@ -17,7 +18,8 @@ def start_new_task(config):
     run_command(f"git checkout {base_branch}")
     run_command(f"git pull origin {base_branch}")
     run_command(f"git checkout -b {branch_name}")
-    jira_transition(config, task_number, "en cours")
+    if not jira_task_is_in_status(config, task_number, "en cours"):
+        jira_transition(config, task_number, "en cours")
     print(f"Branche {branch_name} créée à partir de {base_branch} et la tâche Jira est maintenant en cours.")
 
 def fix_development(config):
@@ -40,16 +42,26 @@ def end_development(config):
 
     print(f"Le message qui sera commiter est le suivant: \n \n \t {final_commit_message}")
 
-    select_files_for_commit()
+    """If no files are modified, return."""
+    if not select_files_for_commit():
+        return
 
-    run_command("git add .")
-    run_command(f"git commit -m \"{commit_message}\"")
+    run_command(f"git commit -m \"{final_commit_message}\"")
+    """Transition the Jira task to 'en revue' if not already.""" 
     jira_transition(config, task_number, "en revue")
+    jira_add_comment(config, task_number, commit_message)
     print(f"Modifications commitées avec le message : {commit_message}. La tâche Jira est maintenant en revue.")
 
     """Get current branch name and push changes."""
     branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
-    run_command(f"git push -u origin {branch_name}")
+
+    """TODO: Implement choice between gitlab and github."""
+    """Ask if want to create a pull request on Gitlab."""
+    if input("Voulez-vous créer une pull request ? (y/n) ").lower() == "y":
+        run_command(f"git push -u origin {branch_name}")
+        create_merge_request(config, branch_name, "Merge branch "+ branch_name + " into develop")
+    else:
+        run_command(f"git push -u origin {branch_name}")
 
 def continue_development(config):
     """Handle continuing the development of a task."""
@@ -60,10 +72,11 @@ def continue_development(config):
 
     print(f"Le message qui sera commiter est le suivant: \n \n \t {final_commit_message}")
 
-    select_files_for_commit()
+    """If no files are modified, return."""
+    if not select_files_for_commit():
+        return
 
-    run_command("git add .")
-    run_command(f"git commit -m \"{commit_message}\"")
+    run_command(f"git commit -m \"{final_commit_message}\"")
     """Transition the Jira task to 'en cours' if not already."""
     if not jira_task_is_in_status(config, task_number, "en cours"):
         jira_transition(config, task_number, "en cours")

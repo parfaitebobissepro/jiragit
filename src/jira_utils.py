@@ -18,8 +18,8 @@ def jira_transition(config, task_number, status):
     jira_url = config["jira_url"]
     auth = (config["jira_username"], config["jira_api_token"])
     transition_mapping = {  # Map status names to transition IDs
-        "en cours": "2",  # Example transition ID
-        "en revue": "3",  # Example transition ID
+        "en cours": "2",
+        "en revue": "3",
     }
     transition_id = transition_mapping.get(status)
     if not transition_id:
@@ -34,7 +34,7 @@ def jira_transition(config, task_number, status):
     if response.status_code == 204:
         print(f"La tâche Jira {task_number} est passée à l'état : {status}.")
     else:
-        print(f"Erreur lors de la transition de la tâche Jira {task_number} : {response.status_code} {response.text}")
+        print(f"❌ Erreur lors de la transition de la tâche Jira {task_number} : {response.status_code} {response.text}")
 
 def get_valid_task_number(config):
     """Prompt the user for a valid Jira task number."""
@@ -81,7 +81,7 @@ def jira_add_comment(config, task_number, comment):
     if response.status_code == 201:
         print(f"Commentaire ajouté à la tâche Jira {task_number}.")
     else:
-        print(f"Erreur lors de l'ajout du commentaire à la tâche Jira {task_number} : {response.status_code} {response.text}")
+        print(f"❌ Erreur lors de l'ajout du commentaire à la tâche Jira {task_number} : {response.status_code} {response.text}")
 
 def jira_task_is_in_status(config, task_number, status):
     """Check if a Jira task is in a specific status."""
