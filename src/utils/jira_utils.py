@@ -1,42 +1,41 @@
-import requests
 import json
-import os
+from .api import api_call
+from global_const import GLOBAL_JSON_CONFIG
 
-def jira_task_exists(config, task_number):
+def jira_api_call(method, endpoint, payload=None):
+    """Make an API call to Jira using the provided configuration."""
+    url = GLOBAL_JSON_CONFIG["jira"]["url"]
+    auth = (GLOBAL_JSON_CONFIG["jira"]["username"], GLOBAL_JSON_CONFIG["jira"]["api_token"])
+    headers = {"Content-Type": "application/json"}
+    return api_call(url, method, endpoint, auth=auth, headers=headers, payload=payload)
+
+def jira_task_exists(task_number):
     """Check if a Jira task exists."""
-    jira_url = config["jira_url"]
-    auth = (config["jira_username"], config["jira_api_token"])
-    url = f"{jira_url}/rest/api/3/issue/{task_number}"
-    response = requests.get(url, auth=auth)
+    endpoint = f"/rest/api/3/issue/{task_number}"
+    response = jira_api_call("GET", endpoint)
     if response.status_code == 200:
         return response.json()
     print(f"La tâche Jira {task_number} est introuvable. Veuillez réessayer.")
     return None
 
-def jira_transition(config, task_number, status):
+def jira_transition(task_number, status_transition_enum):
     """Transition a Jira task to a new status."""
-    jira_url = config["jira_url"]
-    auth = (config["jira_username"], config["jira_api_token"])
-    transition_mapping = config.get("jira_workflow", {})
-    transition_id = transition_mapping.get(status)
-    if not transition_id:
-        print(f"État '{status}' non valide ou non configuré.")
+    if not status_transition_enum.value:
+        print(f"État au statut '{status_transition_enum.name}' non valide ou non configuré.")
         return
-
-    url = f"{jira_url}/rest/api/3/issue/{task_number}/transitions"
-    payload = {"transition": {"id": transition_id}}
-    headers = {"Content-Type": "application/json"}
-
-    response = requests.post(url, json=payload, auth=auth, headers=headers)
+    print(f"status_transition_enum.value : {status_transition_enum.value}")
+    endpoint = f"/rest/api/3/issue/{task_number}/transitions"
+    payload = {"transition": {"id": status_transition_enum.value}}
+    response = jira_api_call("POST", endpoint, payload)
     if response.status_code == 204:
-        print(f"La tâche Jira {task_number} est passée à l'état : {status}.")
+        print(f"La tâche Jira {task_number} est passée à l'état : {status_transition_enum.name}.")
     else:
         print(f"❌ Erreur lors de la transition de la tâche Jira {task_number} : {response.status_code} {response.text}")
 
-def get_task_infos(config):
+def get_task_infos():
     """Prompt the user for a valid Jira task number and return its type."""
     while True:
-        tasks = get_current_sprint_tasks(config)
+        tasks = get_current_sprint_tasks()
         if not tasks:
             print("Aucune tâche trouvée dans le sprint actuel.")
             continue
@@ -65,20 +64,18 @@ def get_task_infos(config):
             print("Choix invalide. Veuillez réessayer.")
             continue
 
-        task_data = jira_task_exists(config, task_number)
+        task_data = jira_task_exists(task_number)
         if task_data:
             task_type = task_data["fields"]["issuetype"]["name"]
             task_summary = task_data["fields"]["summary"]
             return task_number, task_summary, task_type
 
-def get_current_sprint_tasks(config):
+def get_current_sprint_tasks():
     """Retrieve all tasks in the current sprint."""
-    jira_url = config["jira_url"]
-    auth = (config["jira_username"], config["jira_api_token"])
-    board_id = config["jira_board_id"]
-    url = f"{jira_url}/rest/agile/1.0/board/{board_id}/sprint?state=active"
+    board_id = GLOBAL_JSON_CONFIG["jira"]["board_id"]
+    endpoint = f"/rest/agile/1.0/board/{board_id}/sprint?state=active"
     
-    response = requests.get(url, auth=auth)
+    response = jira_api_call("GET", endpoint)
     if response.status_code != 200:
         print(f"❌ Erreur lors de la récupération du sprint actuel : {response.status_code} {response.text}")
         return []
@@ -89,8 +86,8 @@ def get_current_sprint_tasks(config):
         return []
 
     current_sprint_id = sprints[0]["id"]
-    url = f"{jira_url}/rest/agile/1.0/sprint/{current_sprint_id}/issue"
-    response = requests.get(url, auth=auth)
+    endpoint = f"/rest/agile/1.0/sprint/{current_sprint_id}/issue"
+    response = jira_api_call("GET", endpoint)
     if response.status_code != 200:
         print(f"❌ Erreur lors de la récupération des tâches du sprint actuel : {response.status_code} {response.text}")
         return []
@@ -99,20 +96,9 @@ def get_current_sprint_tasks(config):
     tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"]) for issue in issues]
     return tasks
 
-def load_config(config_path="../../Tools/devtools/jiragit/config.json"): #path by default
-    """Load configuration from an external JSON file."""
-    if not os.path.exists(config_path):
-        print(f"Fichier de configuration '{config_path}' introuvable.")
-        return None
-    with open(config_path, "r") as config_file:
-        return json.load(config_file)
-
-def jira_add_comment(config, task_number, comment):
+def jira_add_comment(task_number, comment):
     """Add a comment to a Jira task."""
-    jira_url = config["jira_url"]
-    auth = (config["jira_username"], config["jira_api_token"])
-    url = f"{jira_url}/rest/api/3/issue/{task_number}/comment"
-    payload = {"body": comment}
+    endpoint = f"/rest/api/3/issue/{task_number}/comment"
     payload = {
         "body": {
             "content": [
@@ -130,23 +116,19 @@ def jira_add_comment(config, task_number, comment):
             "version": 1
         }
     }
-    headers = {"Content-Type": "application/json"}
-
-    response = requests.post(url, json=payload, auth=auth, headers=headers)
+    response = jira_api_call("POST", endpoint, payload)
     if response.status_code == 201:
         print(f"Commentaire ajouté à la tâche Jira {task_number}.")
     else:
         print(f"❌ Erreur lors de l'ajout du commentaire à la tâche Jira {task_number} : {response.status_code} {response.text}")
 
-def jira_task_is_in_status(config, task_number, status):
+def jira_task_is_in_status(task_number, status):
     """Check if a Jira task is in a specific status."""
-    jira_url = config["jira_url"]
-    auth = (config["jira_username"], config["jira_api_token"])
-    url = f"{jira_url}/rest/api/3/issue/{task_number}"
-    response = requests.get(url, auth=auth)
+    endpoint = f"/rest/api/3/issue/{task_number}"
+    response = jira_api_call("GET", endpoint)
     if response.status_code == 200:
         task_data = response.json()
         current_status = task_data["fields"]["status"]["name"]
-        return current_status.lower() == status.lower()
+        return current_status.lower() == str(status).lower()
     print(f"La tâche Jira {task_number} est introuvable. Veuillez réessayer.")
     return False

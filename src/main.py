@@ -1,10 +1,9 @@
-from jira_utils import load_config
+import utils
 from actions import start_new_task, continue_development, end_development
-
+from global_const import GLOBAL_JSON_CONFIG
 
 def main():
-    config = load_config()
-    if not config:
+    if not GLOBAL_JSON_CONFIG:
         print("Impossible de charger la configuration. Vérifiez 'config.json'.")
         return
 
@@ -12,7 +11,7 @@ def main():
         "1": ("Nouveau développement", start_new_task),
         "2": ("Continuer le développement", continue_development),
         "3": ("Fin de développement", end_development),
-        "4": ("Quitter", lambda config: print("Au revoir !"))
+        "4": ("Quitter", lambda bye: print("Au revoir !"))
     }
 
     while True:
@@ -23,10 +22,10 @@ def main():
 
         if choice in options:
             if choice == "4":
-                options[choice][1](config)
+                options[choice][1](bye=True)
                 break
             else:
-                options[choice][1](config)
+                options[choice][1]()
         else:
             print("Choix invalide. Veuillez réessayer.")
 

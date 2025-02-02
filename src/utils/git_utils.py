@@ -1,25 +1,12 @@
-import subprocess
 import re
-from string_utils import remove_accents # Import from string_utils
-
-def run_command(command):
-    """Run a shell command and return its output."""
-    try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Erreur lors de l'exécution de la commande : {command}\n{e.stderr}")
-        return None
+from .string_utils import remove_accents
+from .run_command import run_command
+from global_const import GLOBAL_JSON_CONFIG
 
 def generate_branch_name(task_code, title, type):
     """Mapping between Jira task types and branch prefixes."""
     """TODO: Prendre en compte les hotfixes"""
-    type_mapping = {
-        "Story": "story",
-        "Bug": "fix",
-        "Tâche": "feature",
-        "Epic": "epic"
-    }
+    type_mapping = GLOBAL_JSON_CONFIG["jira"]["task_type_mapping"]
 
     type = type_mapping.get(type, "feature")
 
