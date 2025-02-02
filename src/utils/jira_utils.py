@@ -1,6 +1,6 @@
 import json
 from .api import api_call
-from global_const import GLOBAL_JSON_CONFIG
+from src.global_const import GLOBAL_JSON_CONFIG
 
 def jira_api_call(method, endpoint, payload=None):
     """Make an API call to Jira using the provided configuration."""

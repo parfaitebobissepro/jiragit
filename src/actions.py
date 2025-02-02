@@ -1,6 +1,6 @@
-from functions_utils import handle_task_creation, commit_and_push_changes
-from utils.git_utils import getCurrentTaskNumber
-from global_const import TaskStatus, WorkflowTransition
+from .functions_utils import handle_task_creation, commit_and_push_changes
+from .utils.git_utils import getCurrentTaskNumber
+from .global_const import TaskStatus, WorkflowTransition
 
 
 def start_new_task():

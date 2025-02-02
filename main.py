@@ -1,6 +1,4 @@
-import utils
-from actions import start_new_task, continue_development, end_development
-from global_const import GLOBAL_JSON_CONFIG
+from src import *
 
 def main():
     if not GLOBAL_JSON_CONFIG:

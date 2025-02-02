@@ -3,7 +3,7 @@ import re
 import os
 from .run_command import run_command
 from .api import api_call
-from global_const import GLOBAL_JSON_CONFIG
+from src.global_const import GLOBAL_JSON_CONFIG, REMOTE_REPO_NAME
 
 def get_gitlab_token(project_name):
     """Récupère le bon token GitLab : d'abord gitlab_token, sinon cherche dans gitlab_tokens."""
@@ -23,7 +23,7 @@ def get_gitlab_token(project_name):
 
 def get_remote_url():
     """Récupère l'URL du dépôt Git local."""
-    remote_url = run_command("git remote get-url origin").strip()
+    remote_url = run_command("git remote get-url {REMOTE_REPO_NAME}").strip()
     if not remote_url:
         print("❌ Impossible de récupérer l'URL du dépôt distant.")
         return None

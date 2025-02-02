@@ -1,5 +1,5 @@
-from utils import *
-from global_const import TaskStatus, WorkflowTransition
+from .utils import *
+from .global_const import TaskStatus, WorkflowTransition,REMOTE_REPO_NAME
 
 def handle_task_creation():
     """Handle the creation of a new task or fix."""
@@ -19,7 +19,7 @@ def handle_task_creation():
 
     if run_command(f"git checkout {base_branch}") != None:
         print(f"Changement de branche vers {base_branch}.")
-        if run_command(f"git pull origin {base_branch}") != None:
+        if run_command(f"git pull {REMOTE_REPO_NAME} {base_branch}") != None:
             print(f"Pull effectué depuis la branche {base_branch}.")
             if run_command(f"git checkout -b {branch_name}") != None:
                 print(f"Branche {branch_name} créée à partir de {base_branch}")
@@ -41,6 +41,6 @@ def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, 
         print(f"Modifications commitées avec le message : {commit_message}.")
 
     branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
-    if run_command(f"git push -u origin {branch_name}") != None:
+    if run_command(f"git push -u {REMOTE_REPO_NAME} {branch_name}") != None:
         if create_pr:
             create_merge_request(branch_name, f"Merge branch {branch_name} into develop")

@@ -1,7 +1,7 @@
 import re
 from .string_utils import remove_accents
 from .run_command import run_command
-from global_const import GLOBAL_JSON_CONFIG
+from src.global_const import GLOBAL_JSON_CONFIG, REMOTE_REPO_NAME
 
 def generate_branch_name(task_code, title, type):
     """Mapping between Jira task types and branch prefixes."""
@@ -46,8 +46,8 @@ def list_remote_branches():
     cleaned_branches = []
     for branch in branches:
         branch = branch.strip()
-        if branch.startswith("remotes/origin/"):
-            cleaned_branches.append(branch.replace("remotes/origin/", ""))
+        if branch.startswith(f"remotes/{REMOTE_REPO_NAME}/"):
+            cleaned_branches.append(branch.replace(f"remotes/{REMOTE_REPO_NAME}/", ""))
     return cleaned_branches
 
 def select_branch():
@@ -69,9 +69,13 @@ def select_branch():
 def getCurrentTaskNumber():
     """Get the current Jira task number from the branch name."""
     branch_name = run_command("git rev-parse --abbrev-ref HEAD")
-    base_name_branch = branch_name.split("_")[0]
-    task_number = base_name_branch.split("/")[1]
-    return task_number
+    try:
+        base_name_branch = branch_name.split("_")[0]
+        task_number = base_name_branch.split("/")[1]
+        return task_number
+    except IndexError:
+        print("Erreur: Vous n'êtes pas sur une branche nommée selon les conventions (par exemple, develop).")
+        raise SystemExit("Veuillez régler le problème puis relancer la commande.")
 
 def select_files_for_commit():
     """Allow user to select files to commit, excluding deleted files, with options to add all files, finish selection, or go back."""
