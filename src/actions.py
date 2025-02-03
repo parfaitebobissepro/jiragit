@@ -5,6 +5,7 @@ from .global_const import TaskStatus, WorkflowTransition
 
 def start_new_task():
     """Handle starting a new task."""
+    print("Création d'une nouvelle tâche.")
     handle_task_creation()
 
 def end_development():
