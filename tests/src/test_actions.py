@@ -1,7 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import sys
-sys.path.append('../')
 from src.actions import end_development, start_new_task, continue_development
 from src.global_const import TaskStatus, WorkflowTransition
 

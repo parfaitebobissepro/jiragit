@@ -9,4 +9,6 @@ py -m pip install -r requirements.txt
 
  %JIRAGIT_HOME%
 
+ py -m unittest discover tests -p "test_*.py"
+
 // Ne checkout que sur le branche remote
