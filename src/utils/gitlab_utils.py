@@ -12,7 +12,7 @@ def get_gitlab_token(project_name):
         return GLOBAL_JSON_CONFIG["gitlab"]["token"]
 
     # Rechercher dans gitlab_tokens si un mapping existe pour le projet
-    if "gitlab_tokens" in GLOBAL_JSON_CONFIG:
+    if "gitlab" in GLOBAL_JSON_CONFIG:
         for token_mapping in GLOBAL_JSON_CONFIG["gitlab"]["tokens"]:
             if project_name in token_mapping:
                 print(f"✅ Token trouvé pour le projet {project_name}.")
