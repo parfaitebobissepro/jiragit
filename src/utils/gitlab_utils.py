@@ -23,7 +23,7 @@ def get_gitlab_token(project_name):
 
 def get_remote_url():
     """Récupère l'URL du dépôt Git local."""
-    remote_url = run_command("git remote get-url {REMOTE_REPO_NAME}").strip()
+    remote_url = run_command(f"git remote get-url {REMOTE_REPO_NAME}").strip()
     if not remote_url:
         print("❌ Impossible de récupérer l'URL du dépôt distant.")
         return None
