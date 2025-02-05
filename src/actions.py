@@ -1,21 +1,23 @@
-from git_utils import getCurrentTaskNumber
-from functions_utils import handle_task_creation, commit_and_push_changes
+from .functions_utils import handle_task_creation, commit_and_push_changes
+from .utils.git_utils import getCurrentTaskNumber
+from .global_const import TaskStatus, WorkflowTransition
 
 
-def start_new_task(config):
+def start_new_task():
     """Handle starting a new task."""
-    handle_task_creation(config)
+    print("Création d'une nouvelle tâche.")
+    handle_task_creation()
 
-def end_development(config):
+def end_development():
     """Handle ending the development of a task."""
     task_number = getCurrentTaskNumber()
     print(f"Le code de la tâche actuelle est le suivant {task_number}")
     commit_message = input("Entrez le message du commit : ").strip()
-    commit_and_push_changes(config, task_number, commit_message, "en revue", create_pr=True)
+    commit_and_push_changes(task_number, commit_message, TaskStatus.IN_REVIEW, WorkflowTransition.IN_REVIEW,create_pr=True)
 
-def continue_development(config):
+def continue_development():
     """Handle continuing the development of a task."""
     task_number = getCurrentTaskNumber()
     print(f"Le code de la tâche actuelle est le suivant {task_number}")
     commit_message = input("Entrez le message du commit : ").strip()
-    commit_and_push_changes(config, task_number, commit_message, "en cours")
+    commit_and_push_changes(task_number, commit_message, TaskStatus.IN_PROGRESS, WorkflowTransition.IN_PROGRESS)

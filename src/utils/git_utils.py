@@ -1,25 +1,12 @@
-import subprocess
 import re
-from string_utils import remove_accents # Import from string_utils
-
-def run_command(command):
-    """Run a shell command and return its output."""
-    try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Erreur lors de l'exécution de la commande : {command}\n{e.stderr}")
-        return None
+from .string_utils import remove_accents
+from .run_command import run_command
+from src.global_const import GLOBAL_JSON_CONFIG, REMOTE_REPO_NAME
 
 def generate_branch_name(task_code, title, type):
     """Mapping between Jira task types and branch prefixes."""
     """TODO: Prendre en compte les hotfixes"""
-    type_mapping = {
-        "Story": "story",
-        "Bug": "fix",
-        "Tâche": "feature",
-        "Epic": "epic"
-    }
+    type_mapping = GLOBAL_JSON_CONFIG["jira"]["task_type_mapping"]
 
     type = type_mapping.get(type, "feature")
 
@@ -59,8 +46,8 @@ def list_remote_branches():
     cleaned_branches = []
     for branch in branches:
         branch = branch.strip()
-        if branch.startswith("remotes/origin/"):
-            cleaned_branches.append(branch.replace("remotes/origin/", ""))
+        if branch.startswith(f"remotes/{REMOTE_REPO_NAME}/"):
+            cleaned_branches.append(branch.replace(f"remotes/{REMOTE_REPO_NAME}/", ""))
     return cleaned_branches
 
 def select_branch():
@@ -82,9 +69,13 @@ def select_branch():
 def getCurrentTaskNumber():
     """Get the current Jira task number from the branch name."""
     branch_name = run_command("git rev-parse --abbrev-ref HEAD")
-    base_name_branch = branch_name.split("_")[0]
-    task_number = base_name_branch.split("/")[1]
-    return task_number
+    try:
+        base_name_branch = branch_name.split("_")[0]
+        task_number = base_name_branch.split("/")[1]
+        return task_number
+    except IndexError:
+        print("Erreur: Vous n'êtes pas sur une branche nommée selon les conventions (par exemple, develop).")
+        raise SystemExit("Veuillez régler le problème puis relancer la commande.")
 
 def select_files_for_commit():
     """Allow user to select files to commit, excluding deleted files, with options to add all files, finish selection, or go back."""
