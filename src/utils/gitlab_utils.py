@@ -1,27 +1,19 @@
-import requests
 import json
-import subprocess
 import re
 import os
+from .run_command import run_command
+from .api import api_call
+from src.global_const import GLOBAL_JSON_CONFIG, REMOTE_REPO_NAME
 
-def load_config():
-    """Charge la configuration depuis config.json"""
-    config_path = "config.json"
-    if not os.path.exists(config_path):
-        print(f"❌ Fichier de configuration '{config_path}' introuvable.")
-        return None
-    with open(config_path, "r") as config_file:
-        return json.load(config_file)
-
-def get_gitlab_token(config, project_name):
+def get_gitlab_token(project_name):
     """Récupère le bon token GitLab : d'abord gitlab_token, sinon cherche dans gitlab_tokens."""
-    if "gitlab_token" in config and config["gitlab_token"]:
+    if "token" in GLOBAL_JSON_CONFIG["gitlab"]:
         print("✅ Utilisation du gitlab_token principal.")
-        return config["gitlab_token"]
+        return GLOBAL_JSON_CONFIG["gitlab"]["token"]
 
     # Rechercher dans gitlab_tokens si un mapping existe pour le projet
-    if "gitlab_tokens" in config:
-        for token_mapping in config["gitlab_tokens"]:
+    if "gitlab" in GLOBAL_JSON_CONFIG:
+        for token_mapping in GLOBAL_JSON_CONFIG["gitlab"]["tokens"]:
             if project_name in token_mapping:
                 print(f"✅ Token trouvé pour le projet {project_name}.")
                 return token_mapping[project_name]
@@ -29,56 +21,67 @@ def get_gitlab_token(config, project_name):
     print(f"❌ Aucun token trouvé pour le projet {project_name}. Vérifiez config.json.")
     return None
 
-def get_project_id(config, token):
-    """Récupère dynamiquement l'ID du projet GitLab en fonction du dépôt local."""
-    gitlab_url = config["gitlab_url"].rstrip("/")
-
-    # Récupérer l'URL du dépôt Git local
-    remote_url = run_command("git remote get-url origin").strip()
-
+def get_remote_url():
+    """Récupère l'URL du dépôt Git local."""
+    remote_url = run_command(f"git remote get-url {REMOTE_REPO_NAME}").strip()
     if not remote_url:
         print("❌ Impossible de récupérer l'URL du dépôt distant.")
-        return None, None
+        return None
+    return remote_url
 
-    # Extraire le nom du projet GitLab
+def extract_project_path(remote_url):
+    """Extrait le chemin du projet GitLab depuis l'URL du dépôt Git."""
     match = re.search(r'gitlab\.com[:/](.+)\.git', remote_url)
     if not match:
         print("❌ Impossible d'extraire le chemin du projet depuis l'URL :", remote_url)
+        return None
+    return match.group(1)
+
+def get_project_id(token):
+    """Récupère dynamiquement l'ID du projet GitLab en fonction du dépôt local."""
+    gitlab_url = GLOBAL_JSON_CONFIG["gitlab"]["url"].rstrip("/")
+
+    # Récupérer l'URL du dépôt Git local
+    remote_url = get_remote_url()
+    if not remote_url:
         return None, None
 
-    project_path = match.group(1)
+    # Extraire le nom du projet GitLab
+    project_path = extract_project_path(remote_url)
+    if not project_path:
+        return None, None
+
     encoded_path = project_path.replace("/", "%2F")  # Encodage URL pour GitLab API
 
     # Récupérer l'ID du projet via l'API GitLab
     url = f"{gitlab_url}/api/v4/projects/{encoded_path}"
     headers = {"PRIVATE-TOKEN": token}
 
-    response = requests.get(url, headers=headers)
+    response = api_call(url, "GET", "", headers=headers)
 
-    if response.status_code == 200:
+    if response:
         project_id = response.json()["id"]
         print(f"✅ Projet GitLab détecté : {project_path} (ID: {project_id})")
         return project_id, project_path
     else:
-        print("❌ Erreur lors de la récupération de l'ID du projet :", response.text)
         return None, None
 
-def create_merge_request(config, branch_name, title):
+def create_merge_request(branch_name, title):
     """Crée une Merge Request sur GitLab en utilisant l'API REST."""
     # Récupérer l'ID du projet et son nom
-    project_id, project_name = get_project_id(config, get_gitlab_token(config, ""))
+    project_id, project_name = get_project_id(get_gitlab_token(""))
     
     if not project_id or not project_name:
         print("❌ Impossible de récupérer l'ID du projet. Annulation de la MR.")
         return
     
     # Trouver le bon token
-    token = get_gitlab_token(config, project_name)
+    token = get_gitlab_token(project_name)
     if not token:
         print("❌ Aucun token valide trouvé. Impossible de créer la MR.")
         return
 
-    gitlab_url = config["gitlab_url"].rstrip("/")
+    gitlab_url = GLOBAL_JSON_CONFIG["gitlab"]["url"].rstrip("/")
     url = f"{gitlab_url}/api/v4/projects/{project_id}/merge_requests"
     headers = {"PRIVATE-TOKEN": token, "Content-Type": "application/json"}
     description = input("Entrez la description de la merge request : ").strip()
@@ -91,18 +94,9 @@ def create_merge_request(config, branch_name, title):
         "assignee_id": None
     }
     
-    response = requests.post(url, headers=headers, json=data)
+    response = api_call(url, "POST", "", headers=headers, payload=data)
     
-    if response.status_code == 201:
+    if response:
         print("✅ Merge Request créée avec succès :", response.json()["web_url"])
     else:
-        print("❌ Erreur lors de la création de la Merge Request :", response.text)
-
-def run_command(command):
-    """Exécute une commande shell et retourne sa sortie."""
-    try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Erreur lors de l'exécution de la commande : {command}\n{e.stderr}")
-        return None
+        print("❌ Erreur lors de la création de la Merge Request.")

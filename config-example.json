@@ -1,5 +1,32 @@
 {
-    "jira_url": "https://base.atlassian.net/",
-    "jira_username": "test@email.com",
-    "jira_api_token": "<jira_api_token>"
+    "jira": {
+        "url": "https://base.atlassian.net/",
+        "username": "test@email.com",
+        "api_token": "<jira_api_token>",
+        "board_id": "1",
+        "workflow": {
+            "IN_PROGRESS": "2",
+            "IN_REVIEW": "3"
+        },
+        "task_status":{
+            "IN_PROGRESS": "En cours",
+            "IN_REVIEW": "Revue en cours"
+        },
+        "task_type_mapping": {
+            "Story": "story",
+            "Bug": "fix",
+            "Tâche": "feature",
+            "Epic": "epic"
+        }
+    },
+    "gitlab": {
+        "url": "https://gitlab.com/",
+        "token": "<gitlab_token>",
+        "tokens": [
+            {
+                "<PROJECT_NAME>": "<project_token>"
+            }
+        ]
+    }
+
 }

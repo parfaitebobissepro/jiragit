@@ -1,7 +1,0 @@
-
-py -m pip install --upgrade pip
-
-py -m pip install -r requirements.txt
-
-
-// Ne checkout que sur le branche remote
