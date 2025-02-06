@@ -33,6 +33,11 @@ Récupérer `jiragit.exe` dans le dossier `dist/`, puis :
    ```
 3. Placer `config.json` dans le répertoire `%JIRAGIT_HOME%`.
 
+Pour définir la variable d'environnement `%JIRAGIT_HOME%`, utilisez la commande suivante :
+```sh
+setx JIRAGIT_HOME "C:\chemin\vers\jiragit"
+```
+
 ## ⚙️ Utilisation
 
 Dans un projet **Git** initialisé, exécuter simplement la commande :
@@ -131,6 +136,10 @@ py -m unittest discover tests/src/utils -p "test_*.py" -b -v
 🚀 Ce projet, dans sa **première version**, répond à un besoin spécifique et simple. Vous pouvez **le fork** et l'utiliser comme **base** pour votre propre outil.  
 📢 Je ne suis pas certain de faire évoluer activement ce projet, mais vous pouvez **proposer des améliorations** et **ouvrir des issues** sur GitHub.  
 🤝 J'essaierai de résoudre les problèmes signalés et de publier des mises à jour autant que possible.
+
+## Licence
+
+[MIT](https://choosealicense.com/licenses/mit/)
 
 ---
 
