@@ -85,15 +85,15 @@ class TestGitUtils(unittest.TestCase):
 
     @patch('src.utils.git_utils.run_command')
     def test_select_files_for_commit(self, mock_run_command):
-        mock_run_command.return_value = " M file1.txt\n M file2.txt\n D file3.txt\n?? file4.txt"
+        mock_run_command.return_value = " M test file1.txt\n M file2.txt\n D file3.txt\n?? file4.txt"
         
         with patch('builtins.input', side_effect=["1", "f", "y"]):
             selected_files = select_files_for_commit()
-            self.assertEqual(selected_files, ["file1.txt"])
+            self.assertEqual(selected_files, ["test file1.txt"])
         
         with patch('builtins.input', side_effect=[".", "y"]):
             selected_files = select_files_for_commit()
-            self.assertEqual(selected_files, ["file1.txt", "file2.txt", "file4.txt"])
+            self.assertEqual(selected_files, ["test file1.txt", "file2.txt", "file4.txt"])
         
         with patch('builtins.input', side_effect=["0"]):
             selected_files = select_files_for_commit()
@@ -101,7 +101,7 @@ class TestGitUtils(unittest.TestCase):
         
         with patch('builtins.input', side_effect=["1", "2", "f", "y"]):
             selected_files = select_files_for_commit()
-            self.assertEqual(selected_files, ["file1.txt", "file2.txt"])
+            self.assertEqual(selected_files, ["test file1.txt", "file2.txt"])
 
 if __name__ == '__main__':
     unittest.main()

@@ -30,7 +30,7 @@ def generate_branch_name(task_code, title, type):
 
 def stash_changes():
     """Stash and apply local changes if any."""
-    stash_list = run_command("git stash list")
+    stash_list = run_command("git status --short").split("\n")
     if stash_list:
         print("Modifications locales détectées.")
         if input("Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
@@ -83,7 +83,10 @@ def select_files_for_commit():
         files_raw = run_command("git status --short").split("\n")
         
         # Exclure les fichiers supprimés (ceux qui commencent par "D")
-        files = [file.strip().split()[-1] for file in files_raw if file.strip() and not file.strip().startswith("D")]
+        files = [file.strip()[2:].strip() for file in files_raw if file.strip() and not file.strip().startswith("D")]
+
+        #remove quotes from file names
+        files = [file.replace('"', '') for file in files]
 
         if not files:
             print("Aucun fichier modifié trouvé.")
@@ -138,7 +141,7 @@ def select_files_for_commit():
         if confirm == "y":
             # Correction ici : Ajout de chaque fichier individuellement
             for file in selected_files:
-                run_command(f"git add {file}")
+                run_command(f"git add \"{file}\"")
             print("✅ Fichiers ajoutés avec succès.")
             return selected_files
         else:

@@ -19,6 +19,9 @@
             "Epic": "epic"
         }
     },
+    "git":{
+        "remote_repository_name": "origin"
+    },
     "gitlab": {
         "url": "https://gitlab.com/",
         "token": "<gitlab_token>",

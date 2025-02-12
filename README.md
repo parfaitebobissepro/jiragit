@@ -2,6 +2,11 @@
 
 Jiragit est un outil CLI permettant de faciliter l'intégration entre **Jira** et **GitLab**.
 Il propose une automatisation du workflow **Jira** et des interactions avec **GitLab**, afin de fluidifier le développement des fonctionnalités et corrections de bugs.
+## 💻 Prérequis
+
+Avant de commencer, assurez-vous d'avoir **Python** installé sur votre ordinateur :
+- Python 3.6 ou supérieur
+- Accès aux commandes Python via le terminal (`python` ou `py`)
 
 ## 📌 Installation & Lancement
 
@@ -125,7 +130,6 @@ Le workflow Jira supporté par défaut est le suivant :
 L'exécution des tests par **module** est recommandée, car la découverte automatique dans les sous-répertoires peut poser problème.
 
 ```sh
-py -m unittest discover tests -p "test_*.py"
 py -m unittest discover tests/ -p "test_*.py" -b -v
 py -m unittest discover tests/src -p "test_*.py" -b -v
 py -m unittest discover tests/src/utils -p "test_*.py" -b -v
