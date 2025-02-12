@@ -84,7 +84,7 @@ class TestJiraUtils(unittest.TestCase):
     @patch('src.utils.jira_utils.jira_api_call')
     def test_jira_add_comment(self, mock_jira_api_call):
         mock_jira_api_call.return_value = MagicMock(status_code=201)
-        jira_add_comment("JIRA-123", "This is a comment")
+        jira_add_comment("JIRA-123", "This is a comment", "http://example.com/mr/1")
         mock_jira_api_call.assert_called_once_with("POST", "/rest/api/3/issue/JIRA-123/comment", {
             "body": {
                 "content": [
@@ -93,6 +93,18 @@ class TestJiraUtils(unittest.TestCase):
                             {
                                 "text": "This is a comment",
                                 "type": "text"
+                            },
+                            {
+                                "text":"[Voir la merge request]",
+                                "type":"text",
+                                "marks":[
+                                {
+                                    "type":"link",
+                                    "attrs":{
+                                    "href": "http://example.com/mr/1"
+                                    }
+                                }
+                                ]
                             }
                         ],
                         "type": "paragraph"
@@ -104,7 +116,7 @@ class TestJiraUtils(unittest.TestCase):
         })
 
         mock_jira_api_call.return_value = MagicMock(status_code=400, text="Bad Request")
-        jira_add_comment("JIRA-123", "This is a comment")
+        jira_add_comment("JIRA-123", "This is a comment", "http://example.com/mr/1")
         mock_jira_api_call.assert_called_with("POST", "/rest/api/3/issue/JIRA-123/comment", {
             "body": {
                 "content": [
@@ -113,6 +125,18 @@ class TestJiraUtils(unittest.TestCase):
                             {
                                 "text": "This is a comment",
                                 "type": "text"
+                            },
+                            {
+                                "text":"[Voir la merge request]",
+                                "type":"text",
+                                "marks":[
+                                {
+                                    "type":"link",
+                                    "attrs":{
+                                    "href": "http://example.com/mr/1"
+                                    }
+                                }
+                                ]
                             }
                         ],
                         "type": "paragraph"

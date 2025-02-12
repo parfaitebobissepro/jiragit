@@ -98,5 +98,6 @@ def create_merge_request(branch_name, title):
     
     if response:
         print("✅ Merge Request créée avec succès :", response.json()["web_url"])
+        return response.json()["web_url"]
     else:
         print("❌ Erreur lors de la création de la Merge Request.")

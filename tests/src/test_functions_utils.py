@@ -42,18 +42,19 @@ class TestFunctionsUtils(unittest.TestCase):
     @patch('src.functions_utils.jira_transition')
     def test_commit_and_push_changes(self, mock_jira_transition, mock_jira_task_is_in_status, mock_jira_add_comment, mock_run_command, mock_select_files_for_commit):
         mock_select_files_for_commit.return_value = True
-        mock_run_command.side_effect = ['current-branch', '', 'Well pushed!']
         mock_jira_task_is_in_status.return_value = False
+        mock_run_command.side_effect = ['[master 09f4acd] Updated index.html \n 1 file changed, 1 insertion(+)','current-branch', '', 'Well pushed!']
 
         with patch('src.functions_utils.create_merge_request') as mock_create_merge_request:
+            mock_create_merge_request.return_value = 'http://example.com/mr/1'
             commit_and_push_changes('JIRA-123', 'Test commit', TaskStatus.IN_REVIEW, WorkflowTransition.IN_REVIEW, create_pr=True)
 
             mock_select_files_for_commit.assert_called_once()
             mock_run_command.assert_any_call('git commit -m "feat:JIRA-123 - Test commit"')
-            mock_jira_add_comment.assert_called_once_with('JIRA-123', 'Test commit')
+            mock_jira_add_comment.assert_called_once_with('JIRA-123', 'Test commit', 'http://example.com/mr/1')
             mock_jira_task_is_in_status.assert_called_once_with('JIRA-123', TaskStatus.IN_REVIEW.value)
             mock_jira_transition.assert_called_once_with('JIRA-123', WorkflowTransition.IN_REVIEW)
-            mock_create_merge_request.assert_called_once()
+            mock_create_merge_request.assert_called_once_with('current-branch', 'Merge branch current-branch into develop')
 
     @patch('src.functions_utils.get_task_infos')
     @patch('src.functions_utils.generate_branch_name')
@@ -91,13 +92,15 @@ class TestFunctionsUtils(unittest.TestCase):
     def test_commit_and_push_changes_no_files_selected(self, mock_jira_transition, mock_jira_task_is_in_status, mock_jira_add_comment, mock_run_command, mock_select_files_for_commit):
         mock_select_files_for_commit.return_value = False
 
-        commit_and_push_changes('JIRA-789', 'Test commit', TaskStatus.IN_REVIEW, WorkflowTransition.IN_REVIEW, create_pr=True)
+        with patch('src.functions_utils.create_merge_request') as mock_create_merge_request:
+            commit_and_push_changes('JIRA-789', 'Test commit', TaskStatus.IN_REVIEW, WorkflowTransition.IN_REVIEW, create_pr=True)
 
-        mock_select_files_for_commit.assert_called_once()
-        mock_run_command.assert_not_called()
-        mock_jira_add_comment.assert_not_called()
-        mock_jira_task_is_in_status.assert_not_called()
-        mock_jira_transition.assert_not_called()
+            mock_select_files_for_commit.assert_called_once()
+            mock_run_command.assert_not_called()
+            mock_jira_add_comment.assert_not_called()
+            mock_jira_task_is_in_status.assert_not_called()
+            mock_jira_transition.assert_not_called()
+            mock_create_merge_request.assert_not_called()
 
     if __name__ == '__main__':
         unittest.main()

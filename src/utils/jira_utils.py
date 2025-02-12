@@ -96,19 +96,44 @@ def get_current_sprint_tasks():
     tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"]) for issue in issues]
     return tasks
 
-def jira_add_comment(task_number, comment):
+def jira_add_comment(task_number, comment, mr_url=None):
     """Add a comment to a Jira task."""
     endpoint = f"/rest/api/3/issue/{task_number}/comment"
+
+    comment_text = {
+                    "text": comment,
+                    "type": "text"
+                }
+
+    comment_url = {
+                    "text":"[Voir la merge request]",
+                    "type":"text",
+                    "marks":[
+                    {
+                        "type":"link",
+                        "attrs":{
+                        "href": mr_url
+                        }
+                    }
+                    ]
+                }
+
+    final_content = []
+
+    """Add comment text to final content comment exist."""
+    if comment:
+        final_content.append(comment_text)
+
+    """Add comment url to final content mr_url exist."""
+    if mr_url:
+        final_content.append(comment_url)
+
+
     payload = {
         "body": {
             "content": [
             {
-                "content": [
-                {
-                    "text": comment,
-                    "type": "text"
-                }
-                ],
+                "content": final_content,
                 "type": "paragraph"
             }
             ],

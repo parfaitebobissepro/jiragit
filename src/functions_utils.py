@@ -33,14 +33,16 @@ def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, 
 
     if not select_files_for_commit():
         return
-
     if run_command(f"git commit -m \"{final_commit_message}\"") != None:
-        jira_add_comment(task_number, commit_message)
-        if not jira_task_is_in_status(task_number, jira_task_status_enum.value):
-            jira_transition(task_number, jira_workflow_transition_enum)
         print(f"Modifications commitées avec le message : {commit_message}.")
+        
+        branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
+        if run_command(f"git push -u {REMOTE_REPO_NAME} {branch_name}") != None:
+            if not jira_task_is_in_status(task_number, jira_task_status_enum.value):
+                jira_transition(task_number, jira_workflow_transition_enum)
 
-    branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
-    if run_command(f"git push -u {REMOTE_REPO_NAME} {branch_name}") != None:
-        if create_pr:
-            create_merge_request(branch_name, f"Merge branch {branch_name} into develop")
+            mr_url = None
+            
+            if create_pr:
+                mr_url = create_merge_request(branch_name, f"Merge branch {branch_name} into develop")
+            jira_add_comment(task_number, commit_message, mr_url)
