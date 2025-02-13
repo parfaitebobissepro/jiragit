@@ -15,7 +15,7 @@ def handle_task_creation():
         print("\nSélectionnez la branche de base pour la nouvelle branche.")
         base_branch = select_branch()
 
-    stash_changes()
+    is_changes_saved = stash_changes()
 
     if run_command(f"git checkout {base_branch}") != None:
         print(f"Changement de branche vers {base_branch}.")
@@ -25,6 +25,8 @@ def handle_task_creation():
                 print(f"Branche {branch_name} créée à partir de {base_branch}")
                 if not jira_task_is_in_status(task_number, TaskStatus.IN_PROGRESS.value):
                     jira_transition(task_number, WorkflowTransition.IN_PROGRESS)
+                if is_changes_saved:
+                    apply_stashed_changes()
 
 def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, jira_workflow_transition_enum, create_pr=False):
     """Handle committing and pushing changes, and updating Jira status."""

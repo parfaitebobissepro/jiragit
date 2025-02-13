@@ -29,16 +29,21 @@ def generate_branch_name(task_code, title, type):
     return branch_base
 
 def stash_changes():
-    """Stash and apply local changes if any."""
+    """Stash local changes if any."""
     stash_list = run_command("git status --short").split("\n")
     if stash_list:
         print("Modifications locales détectées.")
         if input("Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
             run_command("git stash")
             print("Modifications stashées.")
-            if input("Voulez-vous appliquer les modifications stashées ? (y/n) ").lower() == "y":
-                run_command("git stash apply")
-                print("Modifications réappliquées.")
+            return True
+    return False
+
+def apply_stashed_changes():
+    """Apply stashed changes if user confirms."""
+    if input("Voulez-vous appliquer les modifications stashées ? (y/n) ").lower() == "y":
+        run_command("git stash apply")
+        print("Modifications réappliquées.")
 
 def list_remote_branches():
     """List remote branch names."""

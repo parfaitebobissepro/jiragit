@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from src.utils.git_utils import generate_branch_name, stash_changes, list_remote_branches, select_branch, getCurrentTaskNumber, select_files_for_commit
+from src.utils.git_utils import generate_branch_name, stash_changes, apply_stashed_changes, list_remote_branches, select_branch, getCurrentTaskNumber, select_files_for_commit
 
 class TestGitUtils(unittest.TestCase):
 
@@ -29,19 +29,25 @@ class TestGitUtils(unittest.TestCase):
 
     @patch('src.utils.git_utils.run_command')
     def test_stash_changes(self, mock_run_command):
-        mock_run_command.side_effect = ["stash@{0}: WIP on master: 1234567", None, None, None, None, None]
+        mock_run_command.side_effect = ["M  file1.txt", "Saved working directory"]
         
-        with patch('builtins.input', side_effect=["y", "y"]):
-            stash_changes()
-            self.assertEqual(mock_run_command.call_count, 3)
+        with patch('builtins.input', return_value='y'):
+            result = stash_changes()
+            self.assertTrue(result)
+            self.assertEqual(mock_run_command.call_count, 2)
+
+    @patch('src.utils.git_utils.run_command')
+    def test_apply_stashed_changes(self, mock_run_command):
+        mock_run_command.return_value = None
         
-        with patch('builtins.input', side_effect=["y", "n"]):
-            stash_changes()
-            self.assertEqual(mock_run_command.call_count, 4)
+        with patch('builtins.input', return_value='y'):
+            apply_stashed_changes()
+            mock_run_command.assert_called_once_with('git stash apply')
         
-        with patch('builtins.input', side_effect=["n"]):
-            stash_changes()
-            self.assertEqual(mock_run_command.call_count, 5)
+        mock_run_command.reset_mock()
+        with patch('builtins.input', return_value='n'):
+            apply_stashed_changes()
+            mock_run_command.assert_not_called()
 
     @patch('src.utils.git_utils.run_command')
     def test_list_remote_branches(self, mock_run_command):

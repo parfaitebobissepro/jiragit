@@ -11,15 +11,17 @@ class TestFunctionsUtils(unittest.TestCase):
     @patch('src.functions_utils.input')
     @patch('src.functions_utils.select_branch')
     @patch('src.functions_utils.stash_changes')
+    @patch('src.functions_utils.apply_stashed_changes')
     @patch('src.functions_utils.run_command')
     @patch('src.functions_utils.jira_task_is_in_status')
     @patch('src.functions_utils.jira_transition')
-    def test_handle_task_creation(self, mock_jira_transition, mock_jira_task_is_in_status, mock_run_command, mock_stash_changes, mock_select_branch, mock_input, mock_generate_branch_name, mock_get_task_infos):
+    def test_handle_task_creation_with_changes(self, mock_jira_transition, mock_jira_task_is_in_status, mock_run_command, mock_apply_stashed_changes, mock_stash_changes, mock_select_branch, mock_input, mock_generate_branch_name, mock_get_task_infos):
         mock_get_task_infos.return_value = ('JIRA-123', 'Test Task', 'Feature')
         mock_generate_branch_name.return_value = 'feature/JIRA-123-test-task'
         mock_input.return_value = 'feature/JIRA-123-test-task'
         mock_select_branch.return_value = 'main'
-        mock_run_command.side_effect = ['Switched to branch \'main\'', 'Already up to date.', 'Switched to a new branch \'feature/JIRA-123-test-task\'']
+        mock_stash_changes.return_value = True
+        mock_run_command.side_effect = ['Switched to branch \'main\'', 'Already up to date.', 'Switched to a new branch \'feature/JIRA-123-test-task\'', 'On branch fix/corrections_after_demo \n modified:   src/example_file.py']
         mock_jira_task_is_in_status.return_value = False
 
         handle_task_creation()
@@ -29,6 +31,39 @@ class TestFunctionsUtils(unittest.TestCase):
         mock_input.assert_called_once()
         mock_select_branch.assert_called_once()
         mock_stash_changes.assert_called_once()
+        mock_apply_stashed_changes.assert_called_once()
+        mock_run_command.assert_any_call('git checkout main')
+        mock_run_command.assert_any_call(f'git pull {REMOTE_REPO_NAME} main')
+        mock_run_command.assert_any_call('git checkout -b feature/JIRA-123-test-task')
+        mock_jira_task_is_in_status.assert_called_once_with('JIRA-123', TaskStatus.IN_PROGRESS.value)
+        mock_jira_transition.assert_called_once_with('JIRA-123', WorkflowTransition.IN_PROGRESS)
+
+    @patch('src.functions_utils.get_task_infos')
+    @patch('src.functions_utils.generate_branch_name')
+    @patch('src.functions_utils.input')
+    @patch('src.functions_utils.select_branch')
+    @patch('src.functions_utils.stash_changes')
+    @patch('src.functions_utils.apply_stashed_changes')
+    @patch('src.functions_utils.run_command')
+    @patch('src.functions_utils.jira_task_is_in_status')
+    @patch('src.functions_utils.jira_transition')
+    def test_handle_task_creation_without_changes(self, mock_jira_transition, mock_jira_task_is_in_status, mock_run_command, mock_apply_stashed_changes, mock_stash_changes, mock_select_branch, mock_input, mock_generate_branch_name, mock_get_task_infos):
+        mock_get_task_infos.return_value = ('JIRA-123', 'Test Task', 'Feature')
+        mock_generate_branch_name.return_value = 'feature/JIRA-123-test-task'
+        mock_input.return_value = 'feature/JIRA-123-test-task'
+        mock_select_branch.return_value = 'main'
+        mock_stash_changes.return_value = False
+        mock_run_command.side_effect = ['Switched to branch \'main\'', 'Already up to date.', 'Switched to a new branch \'feature/JIRA-123-test-task\'', 'On branch fix/corrections_after_demo \n modified:   src/example_file.py']
+        mock_jira_task_is_in_status.return_value = False
+
+        handle_task_creation()
+
+        mock_get_task_infos.assert_called_once()
+        mock_generate_branch_name.assert_called_once_with('JIRA-123', 'Test Task', type='Feature')
+        mock_input.assert_called_once()
+        mock_select_branch.assert_called_once()
+        mock_stash_changes.assert_called_once()
+        mock_apply_stashed_changes.assert_not_called()
         mock_run_command.assert_any_call('git checkout main')
         mock_run_command.assert_any_call(f'git pull {REMOTE_REPO_NAME} main')
         mock_run_command.assert_any_call('git checkout -b feature/JIRA-123-test-task')
@@ -61,14 +96,15 @@ class TestFunctionsUtils(unittest.TestCase):
     @patch('src.functions_utils.input')
     @patch('src.functions_utils.select_branch')
     @patch('src.functions_utils.stash_changes')
+    @patch('src.functions_utils.apply_stashed_changes')
     @patch('src.functions_utils.run_command')
     @patch('src.functions_utils.jira_task_is_in_status')
     @patch('src.functions_utils.jira_transition')
-    def test_handle_task_creation_with_bug(self, mock_jira_transition, mock_jira_task_is_in_status, mock_run_command, mock_stash_changes, mock_select_branch, mock_input, mock_generate_branch_name, mock_get_task_infos):
+    def test_handle_bug_task_creation_with(self, mock_jira_transition, mock_jira_task_is_in_status, mock_run_command, mock_stash_changes, mock_apply_stashed_changes, mock_select_branch, mock_input, mock_generate_branch_name, mock_get_task_infos):
         mock_get_task_infos.return_value = ('JIRA-456', 'Fix Bug', 'Bug')
         mock_generate_branch_name.return_value = 'fix/JIRA-456-fix-bug'
         mock_input.return_value = 'fix/JIRA-456-fix-bug'
-        mock_run_command.side_effect = ['Switched to branch \'develop\'', 'Already up to date.', 'Switched to a new branch \'fix/JIRA-456-fix-bug\'']
+        mock_run_command.side_effect = ['Switched to branch \'develop\'', 'Already up to date.', 'Switched to a new branch \'fix/JIRA-456-fix-bug\'', 'y', 'On branch fix/corrections_after_demo \n modified:   src/example_file.py']
         mock_jira_task_is_in_status.return_value = False
 
         handle_task_creation()
@@ -78,6 +114,7 @@ class TestFunctionsUtils(unittest.TestCase):
         mock_input.assert_called_once()
         mock_select_branch.assert_not_called()
         mock_stash_changes.assert_called_once()
+        mock_apply_stashed_changes.assert_called_once()
         mock_run_command.assert_any_call('git checkout develop')
         mock_run_command.assert_any_call(f'git pull {REMOTE_REPO_NAME} develop')
         mock_run_command.assert_any_call('git checkout -b fix/JIRA-456-fix-bug')
