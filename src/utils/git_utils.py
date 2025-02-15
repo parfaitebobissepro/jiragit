@@ -31,9 +31,14 @@ def generate_branch_name(task_code, title, type):
 def stash_changes():
     """Stash local changes if any."""
     stash_list = run_command("git status --short").split("\n")
-    if stash_list:
-        print("Modifications locales détectées.")
-        if input("Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
+
+    """Print the list of modified files."""
+    print("\n--- Fichiers modifiés ---")
+    for file in stash_list:
+        print(file)
+
+    if stash_list and stash_list[0]:
+        if input("\nModifications locales détectées. Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
             run_command("git stash")
             print("Modifications stashées.")
             return True

@@ -28,7 +28,7 @@ python main.py
 
 Utiliser **PyInstaller** pour créer un exécutable standalone :
 ```sh
-pyinstaller --onefile --name=jiragit --hidden-import=src --hidden-import=utils main.py
+pyinstaller --onefile --clean --name=jiragit --hidden-import=src --hidden-import=utils main.py
 ```
 Récupérer `jiragit.exe` dans le dossier `dist/`, puis :
 1. Déplacer l'exécutable dans le répertoire souhaité.

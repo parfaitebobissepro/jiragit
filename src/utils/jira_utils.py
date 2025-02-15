@@ -101,7 +101,7 @@ def jira_add_comment(task_number, comment, mr_url=None):
     endpoint = f"/rest/api/3/issue/{task_number}/comment"
 
     comment_text = {
-                    "text": comment,
+                    "text": comment + " ",
                     "type": "text"
                 }
 
