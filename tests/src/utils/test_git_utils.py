@@ -7,15 +7,6 @@ class TestGitUtils(unittest.TestCase):
     @patch('src.utils.git_utils.run_command')
     def test_generate_branch_name(self, mock_run_command):
         mock_run_command.return_value = None
-        GLOBAL_JSON_CONFIG = {
-            "jira": {
-                "task_type_mapping": {
-                    "Bug": "fix",
-                    "Tâche": "feature"
-                }
-            }
-        }
-        
         # Valid cases
         self.assertEqual(generate_branch_name("JIRA-123", "Fix login issue", "Bug"), "fix/JIRA-123_fix_login_issue")
         self.assertEqual(generate_branch_name("JIRA-456", "Add new feature", "Tâche"), "feature/JIRA-456_add_new_feature")
@@ -52,14 +43,12 @@ class TestGitUtils(unittest.TestCase):
     @patch('src.utils.git_utils.run_command')
     def test_list_remote_branches(self, mock_run_command):
         mock_run_command.return_value = "  remotes/origin/branch1\n  remotes/origin/branch2\n  remotes/origin/branch3"
-        REMOTE_REPO_NAME = "origin"
         branches = list_remote_branches()
         self.assertEqual(branches, ["branch1", "branch2", "branch3"])
 
     @patch('src.utils.git_utils.run_command')
     def test_select_branch(self, mock_run_command):
         mock_run_command.return_value = "  remotes/origin/branch1\n  remotes/origin/branch2\n  remotes/origin/branch3"
-        REMOTE_REPO_NAME = "origin"
         
         with patch('builtins.input', side_effect=["1"]):
             selected_branch = select_branch()

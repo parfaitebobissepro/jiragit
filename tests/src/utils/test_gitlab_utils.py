@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from src.utils.gitlab_utils import get_gitlab_token, get_remote_url, extract_project_path, get_project_id, create_merge_request
-from src.global_const import GLOBAL_JSON_CONFIG, REMOTE_REPO_NAME
 
 class TestGitlabUtils(unittest.TestCase):
 

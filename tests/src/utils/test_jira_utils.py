@@ -4,7 +4,6 @@ from src.utils.jira_utils import (
     jira_api_call, jira_task_exists, jira_transition, get_task_infos,
     get_current_sprint_tasks, jira_add_comment, jira_task_is_in_status
 )
-from src.global_const import GLOBAL_JSON_CONFIG
 
 class TestJiraUtils(unittest.TestCase):
 
@@ -91,7 +90,7 @@ class TestJiraUtils(unittest.TestCase):
                     {
                         "content": [
                             {
-                                "text": "This is a comment",
+                                "text": "This is a comment ",
                                 "type": "text"
                             },
                             {
@@ -123,7 +122,7 @@ class TestJiraUtils(unittest.TestCase):
                     {
                         "content": [
                             {
-                                "text": "This is a comment",
+                                "text": "This is a comment ",
                                 "type": "text"
                             },
                             {
