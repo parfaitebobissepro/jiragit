@@ -33,18 +33,25 @@ def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, 
     final_commit_message = f"feat:{task_number} - {commit_message}"
     print(f"Le message qui sera commiter est le suivant: \n \n \t {final_commit_message}")
 
-    if not select_files_for_commit():
-        return
-    if run_command(f"git commit -m \"{final_commit_message}\"") != None:
-        print(f"Modifications commitées avec le message : {commit_message}.")
-        
-        branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
-        if run_command(f"git push -u {REMOTE_REPO_NAME} {branch_name}") != None:
-            if not jira_task_is_in_status(task_number, jira_task_status_enum.value):
-                jira_transition(task_number, jira_workflow_transition_enum)
+    select_files_for_commit()
 
-            mr_url = None
+    """Vérifie s'il existe des fichiers dans la zone de staging à commiter."""
+    ## Actuelement les fichiers supprimés passent dans le else et sont commit sans informer l'utilisateur, trouver un moyen de proposer leur ajout au commit avant le push
+    staged_files = run_command("git diff --cached --name-only")
+    if not staged_files.strip():
+        print("Aucune modification à commiter.")
+        return
+    else:
+        if run_command(f"git commit -m \"{final_commit_message}\"") != None:
+            print(f"Modifications commitées avec le message : {commit_message}.")
             
-            if create_pr:
-                mr_url = create_merge_request(branch_name, f"Merge branch {branch_name} into develop")
-            jira_add_comment(task_number, commit_message, mr_url)
+            branch_name = run_command("git rev-parse --abbrev-ref HEAD").strip()
+            if run_command(f"git push -u {REMOTE_REPO_NAME} {branch_name}") != None:
+                if not jira_task_is_in_status(task_number, jira_task_status_enum.value):
+                    jira_transition(task_number, jira_workflow_transition_enum)
+
+                mr_url = None
+                
+                if create_pr:
+                    mr_url = create_merge_request(branch_name, f"Merge branch {branch_name} into develop")
+                jira_add_comment(task_number, commit_message, mr_url)
