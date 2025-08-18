@@ -1,6 +1,8 @@
 from .utils import *
 from .global_const import TaskStatus, WorkflowTransition,REMOTE_REPO_NAME
 
+
+#TODO: Exporter toutes commandes git dans git_utils.py
 def handle_task_creation():
     """Handle the creation of a new task or fix."""
     task_number, title, type_task = get_task_infos()
@@ -28,20 +30,31 @@ def handle_task_creation():
                 if is_changes_saved:
                     apply_stashed_changes()
 
+#TODO : Refractorer cette fonction et mettre les tests
 def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, jira_workflow_transition_enum, create_pr=False):
     """Handle committing and pushing changes, and updating Jira status."""
     final_commit_message = f"feat:{task_number} - {commit_message}"
     print(f"Le message qui sera commiter est le suivant: \n \n \t {final_commit_message}")
 
-    select_files_for_commit()
+    staged_files_selected = select_files_for_commit()
 
     """Vérifie s'il existe des fichiers dans la zone de staging à commiter."""
-    ## Actuelement les fichiers supprimés passent dans le else et sont commit sans informer l'utilisateur, trouver un moyen de proposer leur ajout au commit avant le push
     staged_files = run_command("git diff --cached --name-only")
-    if not staged_files.strip():
-        print("Aucune modification à commiter.")
-        return
-    else:
+
+    """Si des fichiers sont déjà stage, et n'ont pas été sélectionnés, on les affiche comme déjà en staging et prevenir qu'ils seront commités."""
+    if staged_files.strip():
+        staged_files = staged_files.split("\n")
+
+        """Fichiers présents dans staged_files mais pas dans staged_files_selected."""
+        if staged_files_selected:
+            staged_files = [file for file in staged_files if file not in staged_files_selected]
+
+        if staged_files and staged_files != []:
+            print("Fichiers déjà en staging :")
+            print("\n".join(staged_files))
+            if input("Voulez-vous continuer avec ces fichiers déjà en staging ? (y/n) ").lower() != "y":
+                return
+
         if run_command(f"git commit -m \"{final_commit_message}\"") != None:
             print(f"Modifications commitées avec le message : {commit_message}.")
             

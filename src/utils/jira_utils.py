@@ -23,7 +23,7 @@ def jira_transition(task_number, status_transition_enum):
     if not status_transition_enum.value:
         print(f"État au statut '{status_transition_enum.name}' non valide ou non configuré.")
         return
-    print(f"status_transition_enum.value : {status_transition_enum.value}")
+    
     endpoint = f"/rest/api/3/issue/{task_number}/transitions"
     payload = {"transition": {"id": status_transition_enum.value}}
     response = jira_api_call("POST", endpoint, payload)
