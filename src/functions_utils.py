@@ -1,13 +1,18 @@
 from .utils import *
 from .global_const import TaskStatus, WorkflowTransition,REMOTE_REPO_NAME
+from src.utils.ansi import get_colored_text, BRIGHT_CYAN
 
 
 #TODO: Exporter toutes commandes git dans git_utils.py
 def handle_task_creation():
     """Handle the creation of a new task or fix."""
     task_number, title, type_task = get_task_infos()
+
+    if not task_number :
+        return
+
     branch_name = generate_branch_name(task_number, title, type=type_task)
-    print(f"Nom de branche proposé : {branch_name}")
+    print(f"Nom de branche proposé : {get_colored_text(branch_name,BRIGHT_CYAN)}")
     branch_name = input(f"Entrez un nom de branche ou appuyez sur Entrée pour utiliser '{branch_name}' : ").strip() or branch_name
 
     if type_task == "Bug":

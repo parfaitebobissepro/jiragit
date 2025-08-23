@@ -1,5 +1,6 @@
 from .utils import load_config
 from enum import Enum
+from src.utils.ansi import *
 
 GLOBAL_JSON_CONFIG = load_config()
 
@@ -12,3 +13,19 @@ class WorkflowTransition(Enum):
 class TaskStatus(Enum):
     IN_PROGRESS = GLOBAL_JSON_CONFIG["jira"]["task_status"]["IN_PROGRESS"]
     IN_REVIEW = GLOBAL_JSON_CONFIG["jira"]["task_status"]["IN_REVIEW"]
+
+class TaskStatus(Enum):
+    IN_PROGRESS = GLOBAL_JSON_CONFIG["jira"]["task_status"]["IN_PROGRESS"]
+    IN_REVIEW = GLOBAL_JSON_CONFIG["jira"]["task_status"]["IN_REVIEW"]
+
+JIRA_STATUS_CATEGORY_COLOR = {
+    "A faire" : CYAN,
+    "En cours" : YELLOW,
+    "Terminé" : GREEN,
+}
+
+JIRA_TYPE_ISSUE_COLOR = {
+    "Tâche" : BLUE,
+    "Bug" : RED
+}
+    

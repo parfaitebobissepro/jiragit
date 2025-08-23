@@ -1,6 +1,7 @@
 import json
 from .api import api_call
-from src.global_const import GLOBAL_JSON_CONFIG
+from src.global_const import GLOBAL_JSON_CONFIG, JIRA_STATUS_CATEGORY_COLOR, JIRA_TYPE_ISSUE_COLOR
+from src.utils.ansi import get_colored_text
 
 def jira_api_call(method, endpoint, payload=None):
     """Make an API call to Jira using the provided configuration."""
@@ -37,7 +38,6 @@ def get_task_infos():
     while True:
         tasks = get_current_sprint_tasks()
         if not tasks:
-            print("Aucune tâche trouvée dans le sprint actuel.")
             continue
 
         """Filter tasks to only include 'Tâche' and 'Bug'."""
@@ -50,7 +50,7 @@ def get_task_infos():
         """Print filtered tasks in the current sprint with numbers."""
         print("\n--- Tâches et Bugs du Sprint Actuel ---")
         for idx, task in enumerate(filtered_tasks, start=1):
-            print(f"{idx}. {task[0]} - {task[1]} ({task[2]})")
+            print(f"{idx}. {task[0]} - {task[1]} ({get_colored_text(task[2],JIRA_TYPE_ISSUE_COLOR[task[2]])}) [{get_colored_text(task[3]['name'],JIRA_STATUS_CATEGORY_COLOR[task[3]['name']])}] ")
 
         print(f"{len(filtered_tasks) + 1}. Entrer manuellement le numéro de la tâche")
 
@@ -93,7 +93,7 @@ def get_current_sprint_tasks():
         return []
 
     issues = response.json().get("issues", [])
-    tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"]) for issue in issues]
+    tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"], issue["fields"]["status"]["statusCategory"]) for issue in issues]
     return tasks
 
 def jira_add_comment(task_number, comment, mr_url=None):
