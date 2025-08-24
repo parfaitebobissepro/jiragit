@@ -4,7 +4,6 @@ from src.utils.jira_utils import (
     jira_api_call, jira_task_exists, jira_transition, get_task_infos,
     get_current_sprint_tasks, jira_add_comment, jira_task_is_in_status
 )
-from src.global_const import GLOBAL_JSON_CONFIG
 
 class TestJiraUtils(unittest.TestCase):
 
@@ -43,7 +42,7 @@ class TestJiraUtils(unittest.TestCase):
     @patch('src.utils.jira_utils.jira_task_exists')
     @patch('src.utils.jira_utils.get_current_sprint_tasks')
     def test_get_task_infos(self, mock_get_current_sprint_tasks, mock_jira_task_exists):
-        mock_get_current_sprint_tasks.return_value = [("JIRA-123", "Summary 1", "Tâche"), ("JIRA-124", "Summary 2", "Bug")]
+        mock_get_current_sprint_tasks.return_value = [("JIRA-123", "Summary 1", "Tâche", {"name":"A faire"}), ("JIRA-124", "Summary 2", "Bug", {"name":"A faire"})]
         with patch('builtins.input', side_effect=["1"]):
             mock_jira_task_exists.return_value = {"fields": {"issuetype": {"name": "Tâche"}, "summary": "Summary 1"}}
             task_number, task_summary, task_type = get_task_infos()
@@ -69,10 +68,10 @@ class TestJiraUtils(unittest.TestCase):
     def test_get_current_sprint_tasks(self, mock_jira_api_call):
         mock_jira_api_call.side_effect = [
             MagicMock(status_code=200, json=lambda: {"values": [{"id": 1}]}),
-            MagicMock(status_code=200, json=lambda: {"issues": [{"key": "JIRA-123", "fields": {"summary": "Summary 1", "issuetype": {"name": "Tâche"}}}]})
+            MagicMock(status_code=200, json=lambda: {"issues": [{"key": "JIRA-123", "fields": {"summary": "Summary 1", "issuetype": {"name": "Tâche"}, "status": {"statusCategory": {"name":"A faire"}}}}]}),
         ]
         tasks = get_current_sprint_tasks()
-        self.assertEqual(tasks, [("JIRA-123", "Summary 1", "Tâche")])
+        self.assertEqual(tasks, [("JIRA-123", "Summary 1", "Tâche", {'name': 'A faire'})])
         self.assertEqual(mock_jira_api_call.call_count, 2)
 
         mock_jira_api_call.side_effect = [
@@ -84,15 +83,27 @@ class TestJiraUtils(unittest.TestCase):
     @patch('src.utils.jira_utils.jira_api_call')
     def test_jira_add_comment(self, mock_jira_api_call):
         mock_jira_api_call.return_value = MagicMock(status_code=201)
-        jira_add_comment("JIRA-123", "This is a comment")
+        jira_add_comment("JIRA-123", "This is a comment", "http://example.com/mr/1")
         mock_jira_api_call.assert_called_once_with("POST", "/rest/api/3/issue/JIRA-123/comment", {
             "body": {
                 "content": [
                     {
                         "content": [
                             {
-                                "text": "This is a comment",
+                                "text": "This is a comment ",
                                 "type": "text"
+                            },
+                            {
+                                "text":"[Voir la merge request]",
+                                "type":"text",
+                                "marks":[
+                                {
+                                    "type":"link",
+                                    "attrs":{
+                                    "href": "http://example.com/mr/1"
+                                    }
+                                }
+                                ]
                             }
                         ],
                         "type": "paragraph"
@@ -104,15 +115,27 @@ class TestJiraUtils(unittest.TestCase):
         })
 
         mock_jira_api_call.return_value = MagicMock(status_code=400, text="Bad Request")
-        jira_add_comment("JIRA-123", "This is a comment")
+        jira_add_comment("JIRA-123", "This is a comment", "http://example.com/mr/1")
         mock_jira_api_call.assert_called_with("POST", "/rest/api/3/issue/JIRA-123/comment", {
             "body": {
                 "content": [
                     {
                         "content": [
                             {
-                                "text": "This is a comment",
+                                "text": "This is a comment ",
                                 "type": "text"
+                            },
+                            {
+                                "text":"[Voir la merge request]",
+                                "type":"text",
+                                "marks":[
+                                {
+                                    "type":"link",
+                                    "attrs":{
+                                    "href": "http://example.com/mr/1"
+                                    }
+                                }
+                                ]
                             }
                         ],
                         "type": "paragraph"

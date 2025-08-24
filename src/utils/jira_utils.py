@@ -1,6 +1,7 @@
 import json
 from .api import api_call
-from src.global_const import GLOBAL_JSON_CONFIG
+from src.global_const import GLOBAL_JSON_CONFIG, JIRA_STATUS_CATEGORY_COLOR, JIRA_TYPE_ISSUE_COLOR
+from src.utils.ansi import get_colored_text
 
 def jira_api_call(method, endpoint, payload=None):
     """Make an API call to Jira using the provided configuration."""
@@ -23,7 +24,7 @@ def jira_transition(task_number, status_transition_enum):
     if not status_transition_enum.value:
         print(f"État au statut '{status_transition_enum.name}' non valide ou non configuré.")
         return
-    print(f"status_transition_enum.value : {status_transition_enum.value}")
+    
     endpoint = f"/rest/api/3/issue/{task_number}/transitions"
     payload = {"transition": {"id": status_transition_enum.value}}
     response = jira_api_call("POST", endpoint, payload)
@@ -37,8 +38,7 @@ def get_task_infos():
     while True:
         tasks = get_current_sprint_tasks()
         if not tasks:
-            print("Aucune tâche trouvée dans le sprint actuel.")
-            continue
+            return None, None, None
 
         """Filter tasks to only include 'Tâche' and 'Bug'."""
         filtered_tasks = [task for task in tasks if task[2] in ["Tâche", "Bug"]]
@@ -50,7 +50,7 @@ def get_task_infos():
         """Print filtered tasks in the current sprint with numbers."""
         print("\n--- Tâches et Bugs du Sprint Actuel ---")
         for idx, task in enumerate(filtered_tasks, start=1):
-            print(f"{idx}. {task[0]} - {task[1]} ({task[2]})")
+            print(f"{idx}. {task[0]} - {task[1]} ({get_colored_text(task[2],JIRA_TYPE_ISSUE_COLOR[task[2]])}) [{get_colored_text(task[3]['name'],JIRA_STATUS_CATEGORY_COLOR[task[3]['name']])}] ")
 
         print(f"{len(filtered_tasks) + 1}. Entrer manuellement le numéro de la tâche")
 
@@ -93,22 +93,47 @@ def get_current_sprint_tasks():
         return []
 
     issues = response.json().get("issues", [])
-    tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"]) for issue in issues]
+    tasks = [(issue["key"], issue["fields"]["summary"], issue["fields"]["issuetype"]["name"], issue["fields"]["status"]["statusCategory"]) for issue in issues]
     return tasks
 
-def jira_add_comment(task_number, comment):
+def jira_add_comment(task_number, comment, mr_url=None):
     """Add a comment to a Jira task."""
     endpoint = f"/rest/api/3/issue/{task_number}/comment"
+
+    comment_text = {
+                    "text": comment + " ",
+                    "type": "text"
+                }
+
+    comment_url = {
+                    "text":"[Voir la merge request]",
+                    "type":"text",
+                    "marks":[
+                    {
+                        "type":"link",
+                        "attrs":{
+                        "href": mr_url
+                        }
+                    }
+                    ]
+                }
+
+    final_content = []
+
+    """Add comment text to final content comment exist."""
+    if comment:
+        final_content.append(comment_text)
+
+    """Add comment url to final content mr_url exist."""
+    if mr_url:
+        final_content.append(comment_url)
+
+
     payload = {
         "body": {
             "content": [
             {
-                "content": [
-                {
-                    "text": comment,
-                    "type": "text"
-                }
-                ],
+                "content": final_content,
                 "type": "paragraph"
             }
             ],

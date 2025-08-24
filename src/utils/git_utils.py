@@ -29,16 +29,26 @@ def generate_branch_name(task_code, title, type):
     return branch_base
 
 def stash_changes():
-    """Stash and apply local changes if any."""
-    stash_list = run_command("git stash list")
-    if stash_list:
-        print("Modifications locales détectées.")
-        if input("Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
+    """Stash local changes if any."""
+    stash_list = run_command("git status --short").split("\n")
+
+    """Print the list of modified files."""
+    print("\n--- Fichiers modifiés ---")
+    for file in stash_list:
+        print(file)
+
+    if stash_list and stash_list[0]:
+        if input("\nModifications locales détectées. Voulez-vous stasher vos modifications actuelles ? (y/n) ").lower() == "y":
             run_command("git stash")
             print("Modifications stashées.")
-            if input("Voulez-vous appliquer les modifications stashées ? (y/n) ").lower() == "y":
-                run_command("git stash apply")
-                print("Modifications réappliquées.")
+            return True
+    return False
+
+def apply_stashed_changes():
+    """Apply stashed changes if user confirms."""
+    if input("Voulez-vous appliquer les modifications stashées ? (y/n) ").lower() == "y":
+        run_command("git stash apply")
+        print("Modifications réappliquées.")
 
 def list_remote_branches():
     """List remote branch names."""
@@ -78,24 +88,51 @@ def getCurrentTaskNumber():
         raise SystemExit("Veuillez régler le problème puis relancer la commande.")
 
 def select_files_for_commit():
-    """Allow user to select files to commit, excluding deleted files, with options to add all files, finish selection, or go back."""
+    """Allow user to select files to commit, handling renamed files and their new locations.
+    Only propose files not already staged.
+    """
     while True:
+        # Get unstaged files
         files_raw = run_command("git status --short").split("\n")
-        
-        # Exclure les fichiers supprimés (ceux qui commencent par "D")
-        files = [file.strip().split()[-1] for file in files_raw if file.strip() and not file.strip().startswith("D")]
+        # Get staged files
+        staged_raw = run_command("git diff --cached --name-only").split("\n")
+        staged_files = set(f.strip().replace('"', '') for f in staged_raw if f.strip())
+
+        files = []
+        file_map = {}  # Map displayed name to actual file path
+
+        for file_line in files_raw:
+            file_line = file_line.strip()
+            if not file_line:
+                continue
+            # Handle renamed files (e.g., "R  oldname -> newname")
+            if "->" in file_line:
+                parts = file_line.split("->")
+                old_path = parts[0].strip()[2:].strip()
+                new_path = parts[1].strip()
+                display_name = f"{old_path} -> {new_path}"
+                # Only propose if new_path is not staged
+                if new_path not in staged_files:
+                    files.append(display_name)
+                    file_map[display_name] = new_path
+            else:
+                file_path = file_line[2:].strip().replace('"', '')
+                # Only propose if file_path is not staged
+                if file_path and file_path not in staged_files:
+                    files.append(file_path)
+                    file_map[file_path] = file_path
 
         if not files:
-            print("Aucun fichier modifié trouvé.")
+            print("Aucun fichier modifié non ajouté trouvé.")
             return
 
         selected_files = []
 
-        print("\n--- Fichiers modifiés (hors fichiers supprimés) ---")
+        print("\n--- Fichiers/Dossiers modifiés (non ajoutés) ---")
         print("0. Revenir en arrière")
         for i, file in enumerate(files, start=1):
             print(f"{i}. {file}")
-        print(". Ajouter tous les fichiers")
+        print(". Ajouter tous les fichiers/dossiers")
         print("f. Terminer la sélection et continuer")
 
         while True:
@@ -106,19 +143,16 @@ def select_files_for_commit():
                 return
 
             if choice == ".":
-                selected_files = files[:]  # Ajouter tous les fichiers sauf supprimés
+                selected_files = files[:]  # Ajouter tous les fichiers proposés
                 break
 
             if choice == "f":
-                if not selected_files:
-                    print("Vous devez sélectionner au moins un fichier avant de terminer.")
-                    continue
                 break
 
             try:
-                choice = int(choice)
-                if 1 <= choice <= len(files):
-                    file = files[choice - 1]
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(files):
+                    file = files[choice_num - 1]
                     if file not in selected_files:
                         selected_files.append(file)
                         print(f"Le fichier {file} a été ajouté à la sélection.")
@@ -134,12 +168,16 @@ def select_files_for_commit():
         for file in selected_files:
             print(f"- {file}")
 
+        if not selected_files:
+            print("Aucun fichier sélectionné")
+            return
+
         confirm = input("Confirmez-vous l'ajout de ces fichiers au commit ? (y/n) : ").strip().lower()
         if confirm == "y":
-            # Correction ici : Ajout de chaque fichier individuellement
+            # Ajout de chaque fichier individuellement, pour les renommés on prend le nouveau chemin
             for file in selected_files:
-                run_command(f"git add {file}")
+                run_command(f'git add "{file_map[file]}"')
             print("✅ Fichiers ajoutés avec succès.")
-            return selected_files
+            return [file_map[file] for file in selected_files]
         else:
             print("Sélection annulée, veuillez recommencer.")

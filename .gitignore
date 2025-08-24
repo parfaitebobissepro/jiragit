@@ -1,2 +1,13 @@
+# Fichier de configuration jiragit
 config.json
+
 __pycache__
+
+# Fichier de couverture de code
+.coverage
+
+# Rapport de couverture de code
+htmlcov/
+
+# Répertoire de livraison des paquets
+build/
