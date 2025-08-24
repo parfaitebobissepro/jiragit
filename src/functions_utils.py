@@ -9,7 +9,7 @@ def handle_task_creation():
     task_number, title, type_task = get_task_infos()
 
     if not task_number :
-        return
+        return False
 
     branch_name = generate_branch_name(task_number, title, type=type_task)
     print(f"Nom de branche proposé : {get_colored_text(branch_name,BRIGHT_CYAN)}")

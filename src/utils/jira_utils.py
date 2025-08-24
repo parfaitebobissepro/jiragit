@@ -38,7 +38,7 @@ def get_task_infos():
     while True:
         tasks = get_current_sprint_tasks()
         if not tasks:
-            continue
+            return None, None, None
 
         """Filter tasks to only include 'Tâche' and 'Bug'."""
         filtered_tasks = [task for task in tasks if task[2] in ["Tâche", "Bug"]]
