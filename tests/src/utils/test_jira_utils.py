@@ -42,7 +42,7 @@ class TestJiraUtils(unittest.TestCase):
     @patch('src.utils.jira_utils.jira_task_exists')
     @patch('src.utils.jira_utils.get_current_sprint_tasks')
     def test_get_task_infos(self, mock_get_current_sprint_tasks, mock_jira_task_exists):
-        mock_get_current_sprint_tasks.return_value = [("JIRA-123", "Summary 1", "Tâche"), ("JIRA-124", "Summary 2", "Bug")]
+        mock_get_current_sprint_tasks.return_value = [("JIRA-123", "Summary 1", "Tâche", {"name":"A faire"}), ("JIRA-124", "Summary 2", "Bug", {"name":"A faire"})]
         with patch('builtins.input', side_effect=["1"]):
             mock_jira_task_exists.return_value = {"fields": {"issuetype": {"name": "Tâche"}, "summary": "Summary 1"}}
             task_number, task_summary, task_type = get_task_infos()
@@ -68,10 +68,10 @@ class TestJiraUtils(unittest.TestCase):
     def test_get_current_sprint_tasks(self, mock_jira_api_call):
         mock_jira_api_call.side_effect = [
             MagicMock(status_code=200, json=lambda: {"values": [{"id": 1}]}),
-            MagicMock(status_code=200, json=lambda: {"issues": [{"key": "JIRA-123", "fields": {"summary": "Summary 1", "issuetype": {"name": "Tâche"}}}]})
+            MagicMock(status_code=200, json=lambda: {"issues": [{"key": "JIRA-123", "fields": {"summary": "Summary 1", "issuetype": {"name": "Tâche"}, "status": {"statusCategory": {"name":"A faire"}}}}]}),
         ]
         tasks = get_current_sprint_tasks()
-        self.assertEqual(tasks, [("JIRA-123", "Summary 1", "Tâche")])
+        self.assertEqual(tasks, [("JIRA-123", "Summary 1", "Tâche", {'name': 'A faire'})])
         self.assertEqual(mock_jira_api_call.call_count, 2)
 
         mock_jira_api_call.side_effect = [

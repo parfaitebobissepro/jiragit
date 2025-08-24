@@ -47,7 +47,8 @@ def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, 
     staged_files = run_command("git diff --cached --name-only")
 
     """Si des fichiers sont déjà stage, et n'ont pas été sélectionnés, on les affiche comme déjà en staging et prevenir qu'ils seront commités."""
-    if staged_files.strip():
+    print(f"staged_files:{staged_files}")
+    if staged_files and staged_files.strip():
         staged_files = staged_files.split("\n")
 
         """Fichiers présents dans staged_files mais pas dans staged_files_selected."""
@@ -73,3 +74,6 @@ def commit_and_push_changes(task_number, commit_message, jira_task_status_enum, 
                 if create_pr:
                     mr_url = create_merge_request(branch_name, f"Merge branch {branch_name} into develop")
                 jira_add_comment(task_number, commit_message, mr_url)
+    else:
+        print("Aucun fichier à commiter. Opération annulée.")
+        return

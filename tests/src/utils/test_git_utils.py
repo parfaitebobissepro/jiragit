@@ -88,7 +88,7 @@ class TestGitUtils(unittest.TestCase):
         
         with patch('builtins.input', side_effect=[".", "y"]):
             selected_files = select_files_for_commit()
-            self.assertEqual(selected_files, ["test file1.txt", "file2.txt", "file4.txt"])
+            self.assertEqual(selected_files, ["test file1.txt", "file2.txt", 'file3.txt', "file4.txt"])
         
         with patch('builtins.input', side_effect=["0"]):
             selected_files = select_files_for_commit()

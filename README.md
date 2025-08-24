@@ -135,6 +135,32 @@ py -m unittest discover tests/src -p "test_*.py" -b -v
 py -m unittest discover tests/src/utils -p "test_*.py" -b -v
 ```
 
+Exécuter un unique test : 
+
+```sh
+ py -m unittest tests.src.test_functions_utils.TestFunctionsUtils.test_commit_and_push_changes_user_aborts_on_staged_files
+```
+
+Taux de couverture :
+
+- Installation du module de couverture
+
+```sh
+pip install coverage 
+```
+
+- Exécution de l'analyse de couverture par **module**
+
+```sh
+coverage run -m unittest discover tests/src/utils
+```
+
+- Génération du rapport au format html
+
+```sh
+coverage html
+```
+
 ## 💡 Contribution
 
 🚀 Ce projet, dans sa **première version**, répond à un besoin spécifique et simple. Vous pouvez **le fork** et l'utiliser comme **base** pour votre propre outil.  
